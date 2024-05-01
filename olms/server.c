@@ -7,8 +7,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 #include "server_client.h"
+#include "./headers/Book.h"
 
 int main(int argc, char * argv[]) {
     printf("Server Side\n");
@@ -57,6 +59,13 @@ int main(int argc, char * argv[]) {
 			perror("accept():");
 			exit(1);
 		}
+        int pid = fork();
+        if (pid < 0)
+        {
+            perror("Fork failed");
+            exit(EXIT_FAILURE);
+        }
+        else if (pid == 0) {
         // making a string to send to the client
         sprintf(str,"%s %u\n",suffix,getpid());
         // send
@@ -111,7 +120,7 @@ int main(int argc, char * argv[]) {
 
         // Now we will open admin.dat if the choice = 1 
         // If choice = 2 ,then open user.dat
-        FILE *fd = NULL;
+        FILE *fd = NULL;int auth_succ = 0;
         char response_authentication[100];
         if (choice == 1) {
             fd = fopen("admin.dat", "rb+");
@@ -124,6 +133,7 @@ int main(int argc, char * argv[]) {
             fscanf(fd,"%s %s",user_check,password_check);
             if((strcmp(user_check,user_name) == 0) && (strcmp(password_check,user_password) == 0)) {
                 printf("Authentication Successful!\n");
+                auth_succ = 1;
                 sprintf(response_authentication, "\nAdmin Authentication Successful!\n");
             }
             else {
@@ -140,7 +150,7 @@ int main(int argc, char * argv[]) {
             char user_check[100];char pass_check[100];int flag = 0;
             while(fscanf(fd,"%s %s",user_check,pass_check) != EOF) {
                 if((strcmp(user_name,user_check) == 0) && (strcmp(user_password,pass_check) == 0)) {
-                    printf("Authentication Successful!\n");flag = 1;
+                    printf("Authentication Successful!\n");flag = 1;auth_succ = 1;
                     sprintf(response_authentication,"\nUser Authentication Successful!\n");
                     break;
                 }
@@ -165,9 +175,100 @@ int main(int argc, char * argv[]) {
 			perror("send():");
 			exit(1);
 		}
+        if(auth_succ) {
+            // printf("%d\n",choice);
+            // Book *b = (Book *)malloc(sizeof(Book));
+            if(choice == 1) {
+                // Admin
+                while(1) {
+                    int option;
+                    r = recv(conn_sock, &option, sizeof(int), 0);
+                    if (r < 0 ){
+                        perror("recv():");
+                        exit(1);
+                    }
+                    
+                    if(option == 1) {
+                        int bookid;char book_name[100];int quantity;
+                        char response_add_book[100];
+                        int temp;
+                        r = recv(conn_sock, &temp, sizeof(int), 0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        bookid = temp;
+                        char temp_1[100];
+                        r = recv(conn_sock, temp_1, sizeof(temp_1)-1, 0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        temp_1[r] = '\0';
+                        int temp_2;
+                        strcpy(book_name,temp_1);
+                        r = recv(conn_sock, &temp_2, sizeof(int), 0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        quantity = temp_2;
+                        // printf("%d %s %d\n",b->bookid,b->book_name,b->quantity);
+                        FILE *book_fd = NULL;
+                        book_fd = fopen("book.txt", "a+");
+                        if (fd == NULL) {
+                            perror("Error opening book.txt");
+                            exit(1);
+                        }
+                        // Applying write lock
+                        struct flock lock;
+                        lock.l_whence = SEEK_SET;
+                        lock.l_len = 0;
+                        lock.l_start = 0;
+                        lock.l_type = F_WRLCK;
+                        fcntl(fileno(book_fd), F_SETLKW, &lock);
 
+                        rewind(book_fd);
+                        int bookid_check;char book_name_check[100];int quantity_check;
+                        int write_flag = 0;
+                        while(fscanf(book_fd,"%d %s %d",&bookid_check,book_name_check,&quantity_check) != EOF) {
+                            if(bookid == bookid_check) {
+                                write_flag = 1;
+                                printf("Book With BookID %d already exists!\n",bookid);
+                                sprintf(response_add_book,"\nBook With BookID %d already exists!\n",bookid);
+                            }
+                        }
+                        if(write_flag == 0) {
+                            fprintf(book_fd,"%d %s %d\n",bookid,book_name,quantity);
+                            printf("Book Added Successfully!\n");
+                            sprintf(response_add_book,"\nBook Added Successfully!\n");
+                        }
+                        // printf("%d %s %d\n",bookid,book_name,quantity);
 
-        // close(conn_sock);
+                        lock.l_type = F_UNLCK;
+                        fcntl(fileno(book_fd), F_SETLKW, &lock);
+                        fclose(book_fd);
+                        r = send(conn_sock,response_add_book,strlen(response_add_book),0);
+                        if (r < 0 ){
+                            perror("send():");
+                            exit(1);
+                        }
+                    }
+                    else if(option == 2) {
+
+                    }
+                    else {
+                        //option 3
+                    }
+                    }
+                }
+            else {
+                // User
+            }
+        }
     }
+    else {    // close(conn_sock);
     close(conn_sock);
+    }
+    }
 }

@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 
 #include "server_client.h"
+#include "./headers/Book.h"
 
 int main(int argc,char * argv[]) {
     printf("Client Side\n");
@@ -92,5 +93,83 @@ int main(int argc,char * argv[]) {
         exit(1);
     }
     printf("%s\n",response_authentication);
+
+    // Checking if the authentication is valid
+    if((strcmp(response_authentication,"\nAdmin Authentication Successful!\n") == 0) || (strcmp(response_authentication,"\nUser Authentication Successful!\n") == 0)) {
+        if(choice == 1) {
+            while(1) {
+                // Admin Mode
+                printf("Please select an option\n");
+                printf("1. Add A Book\n");
+                printf("2. Remove A Book\n");
+                printf("3. Update The Book Title\n");
+                printf("4. Search A Book\n");
+                printf("5. Exit\n");
+
+                int option;
+                scanf("%d",&option);
+                if (send(fsock, &option, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                if(option == 1) {
+                    // Adding the book
+                    // bookid,title,quantity
+                    // if bookid found,quantity increment
+                    // else new book
+                    int bookid;int quantity;
+                    char book_name[100];
+                    printf("Enter The Book ID :\n");
+                    scanf("%d",&bookid);
+                    printf("Enter The Book Name :\n");
+                    scanf("%s",book_name);
+                    printf("Enter The Quanity Of The Book :\n");
+                    scanf("%d",&quantity);
+                    if (send(fsock, &bookid, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    if (send(fsock, book_name, sizeof(book_name)-1, 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    if (send(fsock, &quantity, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    char response_add_book[100];
+                    r = recv(fsock,response_add_book,100,0);
+                    if (r < 0 ){
+                        perror("recv():");
+                        exit(1);
+                    }
+                    printf("%s\n",response_add_book);
+                }
+                else if(option == 2) {
+
+                }
+                else if(option == 3) {
+
+                }else if(option == 4) {
+
+                }
+                else {
+                    break;
+                }
+            }
+        }
+        else if(choice == 2) {
+            while(1) {
+                // User Mode
+                printf("Please select an option\n");
+                printf("1. Search A Book\n");
+                printf("2. Withdraw A Book\n");
+                printf("3. Deposit Book\n");
+                break;
+            }
+        }
+
+    }
+
     exit(0); 
 }
