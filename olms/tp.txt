@@ -1,0 +1,5 @@
+45 rohit 1
+18 virat 2
+7 dhoni 3
+93 bumrah 4
+73 siraj 5

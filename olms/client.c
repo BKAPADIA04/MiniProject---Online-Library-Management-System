@@ -102,9 +102,10 @@ int main(int argc,char * argv[]) {
                 printf("Please select an option\n");
                 printf("1. Add A Book\n");
                 printf("2. Remove A Book\n");
-                printf("3. Update The Book Title\n");
+                printf("3. Update The Book Title And Quantity\n");
                 printf("4. Search A Book\n");
-                printf("5. Exit\n");
+                printf("5. Search A Client\n");
+                printf("6. Exit\n");
 
                 int option;
                 scanf("%d",&option);
@@ -123,7 +124,7 @@ int main(int argc,char * argv[]) {
                     scanf("%d",&bookid);
                     printf("Enter The Book Name :\n");
                     scanf("%s",book_name);
-                    printf("Enter The Quanity Of The Book :\n");
+                    printf("Enter The Quantity Of The Book :\n");
                     scanf("%d",&quantity);
                     if (send(fsock, &bookid, sizeof(int), 0) == -1) {
                         perror("send():");
@@ -146,12 +147,160 @@ int main(int argc,char * argv[]) {
                     printf("%s\n",response_add_book);
                 }
                 else if(option == 2) {
+                    // Remove Book
+                    // copy all books except the given to delete in temp.txt
+                    // copy this file to the original file
 
+                    printf("Enter The BookID Of The Book To Be Removed!\n");
+                    int bookid;
+                    scanf("%d",&bookid);
+                    if (send(fsock, &bookid, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    char response_remove_book[100];
+                    r = recv(fsock,response_remove_book,100,0);
+                    if (r < 0 ){
+                        perror("recv():");
+                        exit(1);
+                    }
+                    printf("%s\n",response_remove_book);
                 }
                 else if(option == 3) {
+                    // 3 cases
+                    // 1. update book name
+                    // 2. update quantity
+                    // 3. update both - book name and quantity
+                    while(1) {
+                    printf("Please Select An Option\n");
+                    printf("1. Update Book Name\n");
+                    printf("2. Update Quantity Book\n");
+                    printf("3. Update Book Name and Quantity\n");
+                    printf("4. Exit Update\n");
+                    int opt;
+                    scanf("%d",&opt);
+                    if (send(fsock, &opt, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    printf("Enter BookID Of The Book :\n");
+                    int bookid;
+                    scanf("%d",&bookid);
+                    if (send(fsock, &bookid, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
 
-                }else if(option == 4) {
+                    if(opt == 1) {
+                        printf("Enter The New Book Name :\n");
+                        char new_book_name[100];
+                        scanf("%s",new_book_name);
+                        if (send(fsock, new_book_name, sizeof(new_book_name)-1, 0) == -1) {
+                            perror("send():");
+                            exit(EXIT_FAILURE);
+                        }
+                        char response_update_only_book_name[100];
+                        r = recv(fsock,response_update_only_book_name,100,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        printf("%s\n",response_update_only_book_name);
+                    }
+                    else if(opt == 2) {
+                        printf("Enter The New Quantity :\n");
+                        int new_quantity;
+                        scanf("%d",&new_quantity);
+                        if (send(fsock, &new_quantity, sizeof(int), 0) == -1) {
+                            perror("send():");
+                            exit(EXIT_FAILURE);
+                        }
+                        char response_update_only_book_quantity[100];
+                        r = recv(fsock,response_update_only_book_quantity,100,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        printf("%s\n",response_update_only_book_quantity);
+                    }
+                    else if(opt == 3){
+                        printf("Enter The New Book Name :\n");
+                        char new_book_name[100];
+                        scanf("%s",new_book_name);
+                        printf("Enter The New Quantity :\n");
+                        int new_quantity;
+                        scanf("%d",&new_quantity);
+                        if (send(fsock, new_book_name, sizeof(new_book_name)-1, 0) == -1) {
+                            perror("send():");
+                            exit(EXIT_FAILURE);
+                        }
+                        if (send(fsock, &new_quantity, sizeof(int), 0) == -1) {
+                            perror("send():");
+                            exit(EXIT_FAILURE);
+                        }
+                        char response_update_both[100];
+                        r = recv(fsock,response_update_both,100,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        printf("%s\n",response_update_both);
+                    }
+                    else { break;}
+                    }
+                }
+                else if(option == 4) {
+                    // Search Book
+                    printf("Enter BookID Of The Book :\n");
+                    int bookid;char book_name[100];int recv_quantity = 0;
+                    scanf("%d",&bookid);
+                    if (send(fsock, &bookid, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    int flag = 0;
+                    r = recv(fsock,&flag,sizeof(int),0);
+                    if (r < 0 ){
+                        perror("recv():");
+                        exit(1);
+                    }
+                    if(flag == 1) {
+                        r = recv(fsock,&bookid,sizeof(int),0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        r = recv(fsock,book_name,sizeof(book_name)-1,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        book_name[r] = '\0';
+                        int temp_;
+                        r = recv(fsock,&temp_,sizeof(int),0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        recv_quantity = temp_;
 
+                        printf("Book ID : %d\n",bookid);
+                        printf("Book Name : %s\n",book_name);
+                        printf("Quantity : %d\n",recv_quantity);
+                    }
+                    else {
+                        char response_book_search[100];
+                        r = recv(fsock,response_book_search,sizeof(response_book_search)-1,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        response_book_search[r] = '\0';
+                        printf("%s\n",response_book_search);
+                    }
+                }
+                else if(option == 5) {
+                    // Search Client
                 }
                 else {
                     break;
@@ -168,7 +317,6 @@ int main(int argc,char * argv[]) {
                 break;
             }
         }
-
     }
 
     exit(0); 
