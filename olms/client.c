@@ -321,13 +321,7 @@ int main(int argc,char * argv[]) {
                         if(bookid == -1) {
                             break;
                         }
-                        r = recv(fsock,book_name,sizeof(book_name)-1,0);
-                        if (r < 0 ){
-                            perror("recv():");
-                            exit(1);
-                        }
-                        book_name[r] = '\0';
-                        printf("Book ID : %d\tBook Name : %s\n",bookid,book_name);    
+                        printf("Book ID : %d\n",bookid);    
                     }
                 }
                 else {

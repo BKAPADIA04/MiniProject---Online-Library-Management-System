@@ -681,12 +681,7 @@ int main(int argc, char * argv[]) {
                                 perror("send():");
                                 exit(EXIT_FAILURE);
                                 }
-                                int bookid_check_;char book_name_check[100];int quantity_check;
-                                fscanf(temp,"%d %s %d",&bookid_check_,book_name_check,&quantity_check);
-                                if (send(conn_sock, book_name_check, sizeof(book_name_check)-1, 0) == -1) {
-                                    perror("send():");
-                                    exit(EXIT_FAILURE);
-                                }
+                                
                             }
                         }
                         flag = 1;
