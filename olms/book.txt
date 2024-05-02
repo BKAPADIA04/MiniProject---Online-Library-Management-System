@@ -1,8 +1,8 @@
 45 rohit 100
-18 virat 50
-7 dhoni 10
+18 virat 48
+7 dhoni 7
+23 pant 45
+12 yuvi 20
 93 boom 1
-49 smith 8
-100 prithvi 1
-23 pant 46
-99 malinga 1
+2 bro 2
+63 surya 36

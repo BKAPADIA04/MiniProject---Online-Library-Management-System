@@ -651,12 +651,405 @@ int main(int argc, char * argv[]) {
                     }
                     else if(option == 5) {
                         // Search client
+                        char user_name[100];
+                        r = recv(conn_sock, &user_name, sizeof(user_name)-1, 0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        user_name[r] = '\0';
+                        printf("Received Client : %s\n",user_name);
+                        FILE * book_issue_fd = NULL;
+                        book_issue_fd = fopen("book_issue.txt","r+");
+                        if (book_issue_fd == NULL) {
+                            perror("Error opening book_issue.txt");
+                            exit(1);
+                        }
+                    struct flock lock;
+                    lock.l_whence = SEEK_SET;
+                    lock.l_len = 0;
+                    lock.l_start = 0;
+                    lock.l_type = F_WRLCK;
+                    fcntl(fileno(book_issue_fd), F_SETLKW, &lock);
+
+                    char client_name_check[100];int bookid_check;
+                    int flag = 0;
+                    FILE *temp = fopen("book.txt","r+");
+                    while(fscanf(book_issue_fd,"%s %d",client_name_check,&bookid_check) != EOF) {
+                            if(strcmp(client_name_check,user_name) == 0) {
+                                if (send(conn_sock, &bookid_check, sizeof(int), 0) == -1) {
+                                perror("send():");
+                                exit(EXIT_FAILURE);
+                                }
+                                int bookid_check_;char book_name_check[100];int quantity_check;
+                                fscanf(temp,"%d %s %d",&bookid_check_,book_name_check,&quantity_check);
+                                if (send(conn_sock, book_name_check, sizeof(book_name_check)-1, 0) == -1) {
+                                    perror("send():");
+                                    exit(EXIT_FAILURE);
+                                }
+                            }
+                        }
+                        flag = 1;
+                        int minus_1 = -1;
+                        if (send(conn_sock, &minus_1, sizeof(int), 0) == -1) {
+                            perror("send():");
+                            exit(EXIT_FAILURE);
+                        }
+                        lock.l_type = F_UNLCK;
+                        fcntl(fileno(book_issue_fd), F_SETLKW, &lock);
+                        fclose(book_issue_fd);
+                        if(flag == 1) {
+                            printf("Book Data Sent Successfully!\n");
+                        }
+                        else {
+                            printf("Book Data Not Sent Successfully!\n");
+                        }
+                        
                     }
                     else { break;}
                     }
                 }
             else {
                 // User
+                while(1) {
+                int option;
+                r = recv(conn_sock, &option, sizeof(int), 0);
+                if (r < 0 ){
+                    perror("recv():");
+                    exit(1);
+                }
+                fflush(stdout);
+                printf("%d\n",option);
+                if(option == 1) {
+                    // Show all books
+                    FILE * book_fd = NULL;
+                    book_fd = fopen("book.txt","r+");
+                    if (book_fd == NULL) {
+                        perror("Error opening book.txt");
+                        exit(1);
+                    }
+                    struct flock lock;
+                    lock.l_whence = SEEK_SET;
+                    lock.l_len = 0;
+                    lock.l_start = 0;
+                    lock.l_type = F_WRLCK;
+                    fcntl(fileno(book_fd), F_SETLKW, &lock);
+
+                    int bookid_check;char book_name_check[100];int quantity_check;
+                    int flag = 0;
+                    while(fscanf(book_fd,"%d %s %d",&bookid_check,book_name_check,&quantity_check) != EOF) {
+
+                            if (send(conn_sock, &bookid_check, sizeof(int), 0) == -1) {
+                                perror("send():");
+                                exit(EXIT_FAILURE);
+                            }
+
+                            if (send(conn_sock, book_name_check, sizeof(book_name_check)-1, 0) == -1) {
+                                perror("send():");
+                                exit(EXIT_FAILURE);
+                            }
+                        }
+                        flag = 1;
+                        int minus_1 = -1;
+                        if (send(conn_sock, &minus_1, sizeof(int), 0) == -1) {
+                            perror("send():");
+                            exit(EXIT_FAILURE);
+                        }
+                        lock.l_type = F_UNLCK;
+                        fcntl(fileno(book_fd), F_SETLKW, &lock);
+                        fclose(book_fd);
+                        if(flag == 1) {
+                            printf("Book Data Sent Successfully!\n");
+                        }
+                        else {
+                            printf("Book Data Not Sent Successfully!\n");
+                        }
+                    }
+                else if(option == 2) {
+                        char user_name[100];int bookid;
+                        r = recv(conn_sock, &user_name, sizeof(user_name)-1, 0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        user_name[r] = '\0';
+                        r = recv(conn_sock, &bookid, sizeof(int), 0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        FILE *book_fd = NULL;
+                        book_fd = fopen("book.txt", "a+");
+                        
+                        FILE *dummy_fd = NULL;
+                        book_fd = fopen("book.txt", "a+");
+                        dummy_fd = fopen("temp.txt","w");
+                        if (book_fd == NULL) {
+                            perror("Error opening book.txt");
+                            exit(1);
+                        }
+                        if (dummy_fd == NULL) {
+                            perror("Error opening temp.txt");
+                            exit(1);
+                        }
+                        fclose(dummy_fd); // empty the file
+                        dummy_fd = fopen("temp.txt","w+");
+                        if (dummy_fd == NULL) {
+                            perror("Error opening temp.txt");
+                            exit(1);
+                        }
+
+                        rewind(book_fd);
+                        // Applying write lock
+                        struct flock lock;
+                        lock.l_whence = SEEK_SET;
+                        lock.l_len = 0;
+                        lock.l_start = 0;
+                        lock.l_type = F_WRLCK;
+                        fcntl(fileno(book_fd), F_SETLKW, &lock);
+
+                        int bookid_check;char book_name_check[100];int quantity_check;
+                        int write_flag = 0;int search_flag = 0;
+                    
+                        while(fscanf(book_fd,"%d %s %d",&bookid_check,book_name_check,&quantity_check) != EOF) {
+                            if(bookid != bookid_check) {
+                                // printf("Hi\n");
+                                // printf("%d %s %d\n",bookid_check,book_name_check,quantity_check);
+                                fprintf(dummy_fd,"%d %s %d\n",bookid_check,book_name_check,quantity_check);
+                                fflush(dummy_fd);
+                            }
+                            if(bookid == bookid_check) {
+                                if(quantity_check > 0) {
+                                    fprintf(dummy_fd,"%d %s %d\n",bookid_check,book_name_check,quantity_check - 1);
+                                    write_flag = 1;
+                                }
+                                else {
+                                    fprintf(dummy_fd,"%d %s %d\n",bookid_check,book_name_check,quantity_check);
+                                }
+                            }
+                        }
+                        fclose(book_fd);
+                        
+                        book_fd = fopen("book.txt","w");
+                        rewind(dummy_fd);
+                        while(fscanf(dummy_fd,"%d %s %d",&bookid_check,book_name_check,&quantity_check) != EOF) {
+                                if(bookid == bookid_check) { search_flag = 1;}
+                                fprintf(book_fd,"%d %s %d\n",bookid_check,book_name_check,quantity_check);
+                                fflush(book_fd);
+                                fflush(dummy_fd);   
+                            }
+                            rewind(book_fd);
+                        if(write_flag == 1) {
+                            printf("Book Quantity Decremented Successfully!\n");
+                        }
+                        else if (write_flag == 0 && search_flag == 1){
+                            printf("Book Quantity Is Zero!\n");
+                        }
+                        else if(search_flag == 0){
+                            printf("Invalid BookID!\n");
+                        }
+                        lock.l_type = F_UNLCK;
+                        fcntl(fileno(book_fd), F_SETLKW, &lock);
+                        fclose(dummy_fd);
+                        fclose(book_fd);
+
+                        FILE *book_issue_fd = NULL;
+                        book_issue_fd = fopen("book_issue.txt", "a+");
+                        if (book_issue_fd == NULL) {
+                            perror("Error opening book.txt");
+                            exit(1);
+                        }
+                        char response_issue[100];
+                        if(write_flag == 1) {
+                        // Applying write lock
+                        struct flock lock_;
+                        lock_.l_whence = SEEK_SET;
+                        lock_.l_len = 0;
+                        lock_.l_start = 0;
+                        lock_.l_type = F_WRLCK;
+                        fcntl(fileno(book_issue_fd), F_SETLKW, &lock_);
+                        int bookid_check_;char book_name_check_[100];int quantity_check_;
+                        int write_flag_ = 0;
+                        if(write_flag_ == 0) {
+                            fprintf(book_issue_fd,"%s %d\n",user_name,bookid);
+                            printf("Book Issued Successfully!\n");
+                            sprintf(response_issue,"\nBook Issued Successfully!\n");
+                        }
+
+                        lock_.l_type = F_UNLCK;
+                        fcntl(fileno(book_issue_fd), F_SETLKW, &lock_);
+                        fclose(book_issue_fd);
+                        }
+                        else if (write_flag == 0 && search_flag == 1) {
+                            printf("Book Quantity Is Zero!\n");
+                            sprintf(response_issue,"\nBook Quantity Is Zero!\n");
+                        }
+                        else {
+                            printf("Invalid BookID!\n");
+                            sprintf(response_issue,"\nInvalid BookID!\n");
+                        }
+                        if (send(conn_sock, response_issue, sizeof(response_issue)-1, 0) == -1) {
+                                perror("send():");
+                                exit(EXIT_FAILURE);
+                            }
+                    }
+                else if(option == 3) {
+                        char user_name[100];int bookid;
+                        r = recv(conn_sock, &user_name, sizeof(user_name)-1, 0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        user_name[r] = '\0';
+                        r = recv(conn_sock, &bookid, sizeof(int), 0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+
+                        FILE *book_issue_fd = NULL; FILE *dummy_book_issue_fd = NULL;
+                            book_issue_fd = fopen("book_issue.txt", "a+");
+                            dummy_book_issue_fd = fopen("book_issue_temp.txt","w");
+                            if (book_issue_fd == NULL) {
+                                perror("Error opening book.txt");
+                                exit(1);
+                            }
+                            if (dummy_book_issue_fd == NULL) {
+                                perror("Error opening temp.txt");
+                                exit(1);
+                            }
+                            fclose(dummy_book_issue_fd); // empty the file
+                            dummy_book_issue_fd = fopen("book_issue_temp.txt","w+");
+                            if (dummy_book_issue_fd == NULL) {
+                                perror("Error opening temp.txt");
+                                exit(1);
+                            }
+
+                            rewind(book_issue_fd);
+                            // Applying write lock
+                            struct flock lock_;
+                            lock_.l_whence = SEEK_SET;
+                            lock_.l_len = 0;
+                            lock_.l_start = 0;
+                            lock_.l_type = F_WRLCK;
+                            fcntl(fileno(book_issue_fd), F_SETLKW, &lock_);
+
+                            int bookid_check_;char client_name_check_[100];
+                            int write_flag_ = 0;
+                            int i=0;
+                            while(fscanf(book_issue_fd,"%s %d",client_name_check_,&bookid_check_) != EOF) {
+                                if((strcmp(user_name,client_name_check_) == 0) && (bookid == bookid_check_)) {
+                                    write_flag_ = 1;i++;
+                                    if(i==1) {
+                                    continue;
+                                    }
+                                }
+                                    fprintf(dummy_book_issue_fd,"%s %d\n",client_name_check_,bookid_check_);
+                                    fflush(dummy_book_issue_fd);
+                            }
+                            fclose(book_issue_fd);
+                            book_issue_fd = fopen("book_issue.txt", "w");
+                            rewind(dummy_book_issue_fd);
+                            while(fscanf(dummy_book_issue_fd,"%s %d",client_name_check_,&bookid_check_) != EOF) {
+                                    fprintf(book_issue_fd,"%s %d\n",client_name_check_,bookid_check_);
+                                    fflush(book_issue_fd);
+                                    fflush(dummy_book_issue_fd);   
+                                }
+                                rewind(book_issue_fd);
+                            char response_return[100];
+                            if(write_flag_ == 1) {
+                                printf("Book Returned Successfully!\n");
+                                sprintf(response_return,"\nBook Returned Successfully!\n");
+                            }
+                            else {
+                                printf("BookID Does Not Exist!\n");
+                                sprintf(response_return,"\nInvalid BookID!\n");
+                            }
+                            lock_.l_type = F_UNLCK;
+                            fcntl(fileno(book_issue_fd), F_SETLKW, &lock_);
+                            fclose(dummy_book_issue_fd);
+                            fclose(book_issue_fd);
+                        
+                        if(write_flag_ == 1) {
+                        FILE *book_fd = NULL;
+                        book_fd = fopen("book.txt", "a+");
+                        
+                        FILE *dummy_fd = NULL;
+                        dummy_fd = fopen("temp.txt","w");
+                        if (book_fd == NULL) {
+                            perror("Error opening book.txt");
+                            exit(1);
+                        }
+                        if (dummy_fd == NULL) {
+                            perror("Error opening temp.txt");
+                            exit(1);
+                        }
+                        fclose(dummy_fd); // empty the file
+                        dummy_fd = fopen("temp.txt","w+");
+                        if (dummy_fd == NULL) {
+                            perror("Error opening temp.txt");
+                            exit(1);
+                        }
+
+                        rewind(book_fd);
+                        // Applying write lock
+                        struct flock lock;
+                        lock.l_whence = SEEK_SET;
+                        lock.l_len = 0;
+                        lock.l_start = 0;
+                        lock.l_type = F_WRLCK;
+                        fcntl(fileno(book_fd), F_SETLKW, &lock);
+
+                        int bookid_check;char book_name_check[100];int quantity_check;
+                        int write_flag = 0;int search_flag = 0;
+                    
+                        while(fscanf(book_fd,"%d %s %d",&bookid_check,book_name_check,&quantity_check) != EOF) {
+                            if(bookid != bookid_check) {
+                                // printf("Hi\n");
+                                // printf("%d %s %d\n",bookid_check,book_name_check,quantity_check);
+                                fprintf(dummy_fd,"%d %s %d\n",bookid_check,book_name_check,quantity_check);
+                                fflush(dummy_fd);
+                            }
+                            if(bookid == bookid_check) {
+                                fprintf(dummy_fd,"%d %s %d\n",bookid_check,book_name_check,quantity_check + 1);
+                                write_flag = 1;
+                            }
+                        }
+                        fclose(book_fd);
+                        book_fd = fopen("book.txt","w");
+                        rewind(dummy_fd);
+                        while(fscanf(dummy_fd,"%d %s %d",&bookid_check,book_name_check,&quantity_check) != EOF) {
+                                if(bookid == bookid_check) { search_flag = 1;}
+                                fprintf(book_fd,"%d %s %d\n",bookid_check,book_name_check,quantity_check);
+                                fflush(book_fd);
+                                fflush(dummy_fd);   
+                            }
+                            rewind(book_fd);
+                        if(write_flag == 1) {
+                            printf("Book Quantity Incremented Successfully!\n");
+                            // sprintf(response_update_both,"\nBook Updated Successfully!\n");
+                        }
+                        else {
+                            printf("Invalid BookID!\n");
+                        }
+                        lock.l_type = F_UNLCK;
+                        fcntl(fileno(book_fd), F_SETLKW, &lock);
+                        fclose(dummy_fd);
+                        fclose(book_fd);
+                        }
+                        else {
+                            printf("Invalid Return Of Book!\n");
+                        }
+
+                        if (send(conn_sock, response_return, sizeof(response_return)-1, 0) == -1) {
+                                perror("send():");
+                                exit(EXIT_FAILURE);
+                            }
+                    }
+                else {
+                    break;
+                    }
+                }
             }
         }
     }

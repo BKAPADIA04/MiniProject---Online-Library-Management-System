@@ -3,3 +3,11 @@
 7 dhoni 3
 93 bumrah 4
 73 siraj 5
+
+client1 93
+client4 45
+client4 18
+client7 7
+client7 12
+client7 23
+client1 45

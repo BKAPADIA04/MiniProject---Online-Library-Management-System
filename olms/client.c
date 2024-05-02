@@ -55,12 +55,14 @@ int main(int argc,char * argv[]) {
 
     printf("Welcome To The Operating Systems Library Management System\n\n");
 
+    
     printf("Please select an option:\n");
     printf("1. Admin Mode\n");
     printf("2. User Mode\n");
 
     int choice;
     scanf("%d",&choice);
+    
     r = send(fsock,&choice,sizeof(int),0);
     // write(fsock,&choice,sizeof(int)); // can use write as well
 	if (r < 0 ){
@@ -301,6 +303,32 @@ int main(int argc,char * argv[]) {
                 }
                 else if(option == 5) {
                     // Search Client
+                    printf("Enter The User Name Of The Client For Book Issued Data :\n");
+                    char user[100];
+                    scanf("%s",user);
+                    if (send(fsock, user, sizeof(user)-1, 0) == -1) {
+                            perror("send():");
+                            exit(EXIT_FAILURE);
+                        }
+                    while(1) {
+                        char book_name[100];
+                        int bookid;
+                        r = recv(fsock,&bookid,sizeof(int),0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        if(bookid == -1) {
+                            break;
+                        }
+                        r = recv(fsock,book_name,sizeof(book_name)-1,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        book_name[r] = '\0';
+                        printf("Book ID : %d\tBook Name : %s\n",bookid,book_name);    
+                    }
                 }
                 else {
                     break;
@@ -309,15 +337,90 @@ int main(int argc,char * argv[]) {
         }
         else if(choice == 2) {
             while(1) {
-                // User Mode
+                // User Mode;
                 printf("Please select an option\n");
-                printf("1. Search A Book\n");
+                printf("1. Show All Books\n");
                 printf("2. Withdraw A Book\n");
                 printf("3. Deposit Book\n");
-                break;
+                printf("4. Exit\n");
+                int option;
+                scanf("%d",&option);
+                if (send(fsock, &option, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                if(option == 1) {
+                    printf("Books Available :\n");
+                    while(1) {
+                        char book_name[100];
+                        int bookid;
+                        r = recv(fsock,&bookid,sizeof(int),0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        if(bookid == -1) {
+                            break;
+                        }
+                        r = recv(fsock,book_name,sizeof(book_name)-1,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        book_name[r] = '\0';
+                        printf("Book ID : %d\tBook Name : %s\n",bookid,book_name);    
+                    }
+                } 
+                else if(option == 2) {
+                    // printf("Please Enter Student ID :\n");
+                    // int studentid;
+                    // scanf("%d",&studentid);
+                    if (send(fsock, user_username, sizeof(user_username)-1, 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    printf("Please Enter Book ID :\n");
+                    int bookid;
+                    scanf("%d",&bookid);
+                    if (send(fsock, &bookid, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    char response_issue[100];
+                    r = recv(fsock,response_issue,sizeof(response_issue)-1,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        response_issue[r] = '\0';
+                        printf("%s\n",response_issue);
+                }
+                else if(option == 3){
+                    if (send(fsock, user_username, sizeof(user_username)-1, 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    printf("Please Enter Book ID :\n");
+                    int bookid;
+                    scanf("%d",&bookid);
+                    if (send(fsock, &bookid, sizeof(int), 0) == -1) {
+                        perror("send():");
+                        exit(EXIT_FAILURE);
+                    }
+                    char response_return[100];
+                    r = recv(fsock,response_return,sizeof(response_return)-1,0);
+                        if (r < 0 ){
+                            perror("recv():");
+                            exit(1);
+                        }
+                        response_return[r] = '\0';
+                        printf("%s\n",response_return);
+                }
+                else {
+                    break;
+                }
             }
         }
     }
-
     exit(0); 
 }
